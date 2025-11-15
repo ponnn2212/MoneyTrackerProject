@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกรายรับรายจ่าย</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="app-title">💰 บันทึกรายรับรายจ่าย</h1>
+            <div class="header-actions">
+                <button class="btn-icon" id="themeToggle" aria-label="สลับธีม">🌓</button>
+                <button class="btn-icon" id="hideBalanceToggle" aria-label="ซ่อนยอดเงิน">👁️</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard View -->
+        <section id="dashboard" class="view active">
+            <div class="balance-card">
+                <h2>ยอดรวมทั้งหมด</h2>
+                <p class="balance-amount" id="totalBalance">฿0.00</p>
+                <div class="accounts-summary" id="accountsSummary"></div>
+            </div>
+
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <h3>รายรับเดือนนี้</h3>
+                    <p class="stat-amount income" id="monthlyIncome">฿0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>รายจ่ายเดือนนี้</h3>
+                    <p class="stat-amount expense" id="monthlyExpense">฿0.00</p>
+                </div>
+            </div>
+
+            <div class="goals-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>เป้าหมายการออม</h2>
+                    <button class="btn-secondary" onclick="app.showView('goals')" style="width: auto; padding: 0.5rem 1rem;">ดูทั้งหมด</button>
+                </div>
+                <div id="goalsList"></div>
+            </div>
+
+            <div class="recent-transactions">
+                <h2>รายการล่าสุด</h2>
+                <div id="recentTransactions"></div>
+            </div>
+
+            <div class="chart-section">
+                <h2>กราฟรายจ่ายตามหมวด</h2>
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Add Transaction View -->
+        <section id="addTransaction" class="view">
+            <div class="form-container">
+                <h2>เพิ่มรายการ</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label>ประเภท</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="type" value="income" checked>
+                                <span>รายรับ</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type" value="expense">
+                                <span>รายจ่าย</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">จำนวนเงิน (฿)</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="account">บัญชี</label>
+                        <select id="account" name="account" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">หมวดหมู่</label>
+                        <select id="category" name="category" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">วันที่</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="note">โน้ต</label>
+                        <textarea id="note" name="note" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">บันทึก</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Accounts View -->
+        <section id="accounts" class="view">
+            <div class="accounts-header">
+                <h2>บัญชีของฉัน</h2>
+                <button class="btn-secondary" id="addAccountBtn">+ เพิ่มบัญชี</button>
+            </div>
+            <div id="accountsList"></div>
+            
+            <div style="margin-top: 2rem;">
+                <h2>เมนูอื่นๆ</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <button class="btn-secondary" onclick="app.showView('goals')">เป้าหมาย</button>
+                    <button class="btn-secondary" onclick="app.showView('budget')">งบประมาณ</button>
+                    <button class="btn-secondary" onclick="app.showView('challenges')">ชาเลนจ์</button>
+                    <button class="btn-secondary" onclick="app.showView('lending')">ยืม/ให้ยืม</button>
+                </div>
+            </div>
+
+            <div class="transfer-section">
+                <h2>โอนเงินระหว่างบัญชี</h2>
+                <form id="transferForm">
+                    <div class="form-group">
+                        <label for="fromAccount">จากบัญชี</label>
+                        <select id="fromAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="toAccount">ไปยังบัญชี</label>
+                        <select id="toAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transferAmount">จำนวนเงิน (฿)</label>
+                        <input type="number" id="transferAmount" step="0.01" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-primary">โอนเงิน</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Statistics View -->
+        <section id="statistics" class="view">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>สถิติและวิเคราะห์</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" onclick="app.showView('budget')" style="width: auto; padding: 0.5rem 1rem;">งบประมาณ</button>
+                    <button class="btn-secondary" onclick="app.showView('challenges')" style="width: auto; padding: 0.5rem 1rem;">ชาเลนจ์</button>
+                </div>
+            </div>
+            
+            <div class="stats-tabs">
+                <button class="tab-btn active" data-tab="weekly">รายสัปดาห์</button>
+                <button class="tab-btn" data-tab="monthly">รายเดือน</button>
+            </div>
+
+            <div class="tab-content active" id="weeklyTab">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+
+            <div class="tab-content" id="monthlyTab">
+                <canvas id="monthlyChart"></canvas>
+                <div id="monthlyComparison"></div>
+            </div>
+
+            <div class="insights-section">
+                <h3>Insights</h3>
+                <div id="insights"></div>
+            </div>
+        </section>
+
+        <!-- Budget View -->
+        <section id="budget" class="view">
+            <div class="budget-header">
+                <h2>งบประมาณ</h2>
+                <button class="btn-secondary" id="addBudgetBtn">+ เพิ่มงบประมาณ</button>
+            </div>
+            <div id="budgetsList"></div>
+        </section>
+
+        <!-- Goals View -->
+        <section id="goals" class="view">
+            <div class="goals-header">
+                <h2>เป้าหมายการออม</h2>
+                <button class="btn-secondary" id="addGoalBtn">+ เพิ่มเป้าหมาย</button>
+            </div>
+            <div id="goalsListFull"></div>
+        </section>
+
+        <!-- Challenges View -->
+        <section id="challenges" class="view">
+            <h2>ชาเลนจ์และเกม</h2>
+            <div id="challengesList"></div>
+            
+            <div class="mini-game-section">
+                <h3>มินิเกม: ดวงไฟการออม</h3>
+                <div class="game-container">
+                    <div id="lightBulbs"></div>
+                    <div class="game-info">
+                        <p>ออมเงินตามเป้าหมายทุกวันเพื่อให้ไฟสว่าง!</p>
+                        <p id="gameStatus"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lending View -->
+        <section id="lending" class="view">
+            <div class="lending-header">
+                <h2>ยืม/ให้ยืมเงิน</h2>
+                <button class="btn-secondary" id="addLendingBtn">+ เพิ่มรายการ</button>
+            </div>
+            <div id="lendingList"></div>
+        </section>
+
+        <!-- Settings View -->
+        <section id="settings" class="view">
+            <h2>ตั้งค่า</h2>
+            <div class="settings-section">
+                <h3>เมนู</h3>
+                <div style="display: grid; gap: 0.5rem;">
+                    <button class="btn-secondary" onclick="app.showView('goals')">เป้าหมายการออม</button>
+                    <button class="btn-secondary" onclick="app.showView('budget')">งบประมาณ</button>
+                    <button class="btn-secondary" onclick="app.showView('challenges')">ชาเลนจ์และเกม</button>
+                    <button class="btn-secondary" onclick="app.showView('lending')">ยืม/ให้ยืมเงิน</button>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h3>บัญชีผู้ใช้</h3>
+                <button class="btn-secondary" id="loginBtn">เข้าสู่ระบบ (เร็วๆ นี้)</button>
+            </div>
+            <div class="settings-section">
+                <h3>การแจ้งเตือน</h3>
+                <label class="switch-label">
+                    <input type="checkbox" id="budgetAlert">
+                    <span>แจ้งเตือนเมื่อใช้งบเกิน</span>
+                </label>
+                <label class="switch-label">
+                    <input type="checkbox" id="goalAlert">
+                    <span>แจ้งเตือนเมื่อใกล้เป้าหมาย</span>
+                </label>
+            </div>
+            <div class="settings-section">
+                <h3>ข้อมูล</h3>
+                <button class="btn-secondary" id="exportBtn">ส่งออก CSV</button>
+                <button class="btn-secondary" id="importBtn">นำเข้า CSV</button>
+                <input type="file" id="importFile" accept=".csv" style="display: none;">
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-view="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="addTransaction">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">เพิ่ม</span>
+        </button>
+        <button class="nav-item" data-view="accounts">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">บัญชี</span>
+        </button>
+        <button class="nav-item" data-view="statistics">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">สถิติ</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">ตั้งค่า</span>
+        </button>
+    </nav>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="btn-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
