@@ -70,7 +70,6 @@ const translations = {
         goal_alert: 'แจ้งเตือนเมื่อใกล้เป้าหมาย',
         data: 'ข้อมูล',
         export_csv: 'ส่งออก CSV',
-        import_csv: 'นำเข้า CSV',
         borrow: 'ยืม',
         lend: 'ให้ยืม',
         person_name: 'ชื่อคน',
@@ -173,7 +172,6 @@ const translations = {
         goal_alert: 'Alert when near goal',
         data: 'Data',
         export_csv: 'Export CSV',
-        import_csv: 'Import CSV',
         borrow: 'Borrow',
         lend: 'Lend',
         person_name: 'Person Name',
@@ -755,17 +753,9 @@ class MoneyTracker {
             this.showAddLendingModal();
         });
 
-        // Export/Import
+        // Export CSV
         document.getElementById('exportBtn')?.addEventListener('click', () => {
             this.exportCSV();
-        });
-
-        document.getElementById('importBtn')?.addEventListener('click', () => {
-            document.getElementById('importFile')?.click();
-        });
-
-        document.getElementById('importFile')?.addEventListener('change', (e) => {
-            this.importCSV(e.target.files[0]);
         });
 
         // Tab switching
@@ -3572,13 +3562,9 @@ class MoneyTracker {
                 </div>
                 <div class="settings-section">
                     <h3>ข้อมูล</h3>
-                    <button class="btn-secondary" onclick="app.exportCSV(); app.closeModal();" style="width: 100%; margin-bottom: 0.5rem;">
+                    <button class="btn-secondary" onclick="app.exportCSV(); app.closeModal();" style="width: 100%;">
                         ส่งออก CSV
                     </button>
-                    <button class="btn-secondary" onclick="document.getElementById('importFileModal').click();" style="width: 100%;">
-                        นำเข้า CSV
-                    </button>
-                    <input type="file" id="importFileModal" accept=".csv" style="display: none;">
                 </div>
             </div>
         `;
@@ -3593,11 +3579,6 @@ class MoneyTracker {
         document.getElementById('goalAlertModal').addEventListener('change', (e) => {
             this.data.settings.goalAlert = e.target.checked;
             this.saveData();
-        });
-        
-        document.getElementById('importFileModal').addEventListener('change', (e) => {
-            this.importCSV(e.target.files[0]);
-            this.closeModal();
         });
     }
 
@@ -4093,42 +4074,6 @@ class MoneyTracker {
         link.download = `รายการเงิน_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         this.showNotification('ส่งออก CSV สำเร็จ!');
-    }
-
-    importCSV(file) {
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target.result;
-            const lines = text.split('\n').slice(1); // Skip header
-            
-            lines.forEach(line => {
-                if (!line.trim()) return;
-                const cells = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g).map(c => c.replace(/^"|"$/g, ''));
-                if (cells.length < 3) return;
-                
-                // Simple import - you might want to enhance this
-                const account = this.data.accounts.find(a => a.name === cells[3]) || this.data.accounts[0];
-                const type = cells[1] === 'รายรับ' ? 'income' : 'expense';
-                
-                this.data.transactions.push({
-                    id: Date.now() + Math.random(),
-                    type: type,
-                    amount: parseFloat(cells[2]) || 0,
-                    accountId: account.id,
-                    category: cells[4] || 'อื่นๆ',
-                    date: cells[0] || new Date().toISOString().split('T')[0],
-                    note: cells[5] || '',
-                    timestamp: new Date().toISOString()
-                });
-            });
-            
-            this.saveData();
-            this.updateUI();
-            this.showNotification('นำเข้า CSV สำเร็จ!');
-        };
-        reader.readAsText(file);
     }
 
     formatDate(dateString) {
