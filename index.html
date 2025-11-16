@@ -67,31 +67,78 @@
     <!-- Header -->
     <header class="header">
         <nav class="nav-bar">
-            <h1 class="app-title">💰 <span data-i18n="app_title">บันทึกรายรับรายจ่าย</span></h1>
+            <div class="nav-left">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="เมนู" title="เมนู">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <h1 class="app-title">💰 <span data-i18n="app_title">บันทึกรายรับรายจ่าย</span></h1>
+            </div>
             <div class="nav-items-container">
-                <button class="nav-item active" data-view="dashboard" onclick="app.showView('dashboard')">
+                <button class="nav-item active" data-view="dashboard" onclick="app.showView('dashboard'); app.closeMobileMenu();">
                     <span class="nav-icon">🏠</span>
                     <span class="nav-label" data-i18n="nav_dashboard">หน้าหลัก</span>
                 </button>
-                <button class="nav-item" data-view="transactions" onclick="app.showView('transactions')">
+                <button class="nav-item" data-view="transactions" onclick="app.showView('transactions'); app.closeMobileMenu();">
                     <span class="nav-icon">📝</span>
                     <span class="nav-label" data-i18n="nav_transactions">รายการ</span>
                 </button>
-                <button class="nav-item" data-view="statistics" onclick="app.showView('statistics')">
+                <button class="nav-item" data-view="statistics" onclick="app.showView('statistics'); app.closeMobileMenu();">
                     <span class="nav-icon">📈</span>
                     <span class="nav-label" data-i18n="nav_statistics">สถิติ</span>
                 </button>
-                <button class="nav-item" data-view="accounts" onclick="app.showView('accounts')">
+                <button class="nav-item" data-view="accounts" onclick="app.showView('accounts'); app.closeMobileMenu();">
                     <span class="nav-icon">💳</span>
                     <span class="nav-label" data-i18n="nav_accounts">บัญชี</span>
                 </button>
             </div>
-            <div class="header-actions">
+            <div class="header-actions" style="display: none;">
                 <button class="btn-icon" id="settingsToggle" aria-label="ตั้งค่า" title="ตั้งค่า">⚙️</button>
                 <button class="btn-icon" id="themeToggle" aria-label="สลับธีม" title="สลับธีม">🌓</button>
                 <button class="btn-icon" id="logoutBtn" aria-label="ออกจากระบบ" title="ออกจากระบบ" style="display: none;">🚪</button>
             </div>
         </nav>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="mobile-menu-header">
+                <h2>เมนู</h2>
+                <button class="btn-close-mobile" id="closeMobileMenu" aria-label="ปิดเมนู">&times;</button>
+            </div>
+            <div class="mobile-menu-items">
+                <button class="mobile-menu-item active" data-view="dashboard" onclick="app.showView('dashboard'); app.closeMobileMenu();">
+                    <span class="mobile-menu-icon">🏠</span>
+                    <span class="mobile-menu-label" data-i18n="nav_dashboard">หน้าหลัก</span>
+                </button>
+                <button class="mobile-menu-item" data-view="transactions" onclick="app.showView('transactions'); app.closeMobileMenu();">
+                    <span class="mobile-menu-icon">📝</span>
+                    <span class="mobile-menu-label" data-i18n="nav_transactions">รายการ</span>
+                </button>
+                <button class="mobile-menu-item" data-view="statistics" onclick="app.showView('statistics'); app.closeMobileMenu();">
+                    <span class="mobile-menu-icon">📈</span>
+                    <span class="mobile-menu-label" data-i18n="nav_statistics">สถิติ</span>
+                </button>
+                <button class="mobile-menu-item" data-view="accounts" onclick="app.showView('accounts'); app.closeMobileMenu();">
+                    <span class="mobile-menu-icon">💳</span>
+                    <span class="mobile-menu-label" data-i18n="nav_accounts">บัญชี</span>
+                </button>
+            </div>
+            <div class="mobile-menu-footer">
+                <button class="mobile-menu-action" id="mobileSettingsToggle" onclick="app.closeMobileMenu();">
+                    <span class="mobile-menu-icon">⚙️</span>
+                    <span class="mobile-menu-label">ตั้งค่า</span>
+                </button>
+                <button class="mobile-menu-action" id="mobileThemeToggle" onclick="app.closeMobileMenu();">
+                    <span class="mobile-menu-icon">🌓</span>
+                    <span class="mobile-menu-label">สลับธีม</span>
+                </button>
+                <button class="mobile-menu-action" id="mobileLogoutBtn" onclick="app.closeMobileMenu();" style="display: none;">
+                    <span class="mobile-menu-icon">🚪</span>
+                    <span class="mobile-menu-label">ออกจากระบบ</span>
+                </button>
+            </div>
+        </div>
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
     </header>
 
     <!-- Main Content -->

@@ -311,14 +311,18 @@ class MoneyTracker {
         document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('appContent').style.display = 'none';
         const logoutBtn = document.getElementById('logoutBtn');
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
         if (logoutBtn) logoutBtn.style.display = 'none';
+        if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'none';
     }
 
     showApp() {
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('appContent').style.display = 'block';
         const logoutBtn = document.getElementById('logoutBtn');
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
         if (logoutBtn) logoutBtn.style.display = 'block';
+        if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'block';
     }
 
     setupAuthListeners() {
@@ -677,6 +681,42 @@ class MoneyTracker {
     }
 
     setupEventListeners() {
+        // Hamburger menu toggle
+        document.getElementById('hamburgerBtn')?.addEventListener('click', () => {
+            this.toggleMobileMenu();
+        });
+
+        document.getElementById('closeMobileMenu')?.addEventListener('click', () => {
+            this.closeMobileMenu();
+        });
+
+        document.getElementById('mobileMenuOverlay')?.addEventListener('click', () => {
+            this.closeMobileMenu();
+        });
+
+        // Close mobile menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const mobileMenu = document.getElementById('mobileMenu');
+                if (mobileMenu && mobileMenu.classList.contains('active')) {
+                    this.closeMobileMenu();
+                }
+            }
+        });
+
+        // Mobile menu action buttons
+        document.getElementById('mobileSettingsToggle')?.addEventListener('click', () => {
+            this.showSettingsModal();
+        });
+
+        document.getElementById('mobileThemeToggle')?.addEventListener('click', () => {
+            this.toggleTheme();
+        });
+
+        document.getElementById('mobileLogoutBtn')?.addEventListener('click', () => {
+            this.logout();
+        });
+
         // Settings toggle
         document.getElementById('settingsToggle')?.addEventListener('click', () => {
             this.showSettingsModal();
@@ -763,12 +803,17 @@ class MoneyTracker {
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
+        document.querySelectorAll('.mobile-menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
 
         const view = document.getElementById(viewName);
         const navItem = document.querySelector(`[data-view="${viewName}"]`);
+        const mobileNavItem = document.querySelector(`.mobile-menu-item[data-view="${viewName}"]`);
         
         if (view) view.classList.add('active');
         if (navItem) navItem.classList.add('active');
+        if (mobileNavItem) mobileNavItem.classList.add('active');
 
         this.updateUI();
         
@@ -805,6 +850,37 @@ class MoneyTracker {
         setTimeout(() => {
             this.updateCharts();
         }, 100);
+    }
+
+    toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobileMenu');
+        const overlay = document.getElementById('mobileMenuOverlay');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        
+        if (mobileMenu && overlay && hamburgerBtn) {
+            const isActive = mobileMenu.classList.contains('active');
+            if (isActive) {
+                this.closeMobileMenu();
+            } else {
+                mobileMenu.classList.add('active');
+                overlay.classList.add('active');
+                hamburgerBtn.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+    }
+
+    closeMobileMenu() {
+        const mobileMenu = document.getElementById('mobileMenu');
+        const overlay = document.getElementById('mobileMenuOverlay');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        
+        if (mobileMenu && overlay && hamburgerBtn) {
+            mobileMenu.classList.remove('active');
+            overlay.classList.remove('active');
+            hamburgerBtn.classList.remove('active');
+            document.body.style.overflow = '';
+        }
     }
 
     toggleTheme() {
