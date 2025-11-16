@@ -9,22 +9,75 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <div class="header-content">
+        <nav class="nav-bar">
             <h1 class="app-title">💰 <span data-i18n="app_title">บันทึกรายรับรายจ่าย</span></h1>
-            <div class="header-actions">
-                <button class="btn-icon" id="languageToggle" aria-label="เปลี่ยนภาษา" title="เปลี่ยนภาษา">🌐</button>
-                <button class="btn-icon" id="themeToggle" aria-label="สลับธีม" title="สลับธีม">🌓</button>
-                <button class="btn-icon" id="hideBalanceToggle" aria-label="ซ่อนยอดเงิน" title="ซ่อนยอดเงิน">👁️</button>
+            <div class="nav-items-container">
+                <button class="nav-item active" data-view="dashboard" onclick="app.showView('dashboard')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label" data-i18n="nav_dashboard">หน้าหลัก</span>
+                </button>
+                <button class="nav-item" data-view="transactions" onclick="app.showView('transactions')">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-label" data-i18n="nav_transactions">รายการ</span>
+                </button>
+                <button class="nav-item" data-view="statistics" onclick="app.showView('statistics')">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-label" data-i18n="nav_statistics">สถิติ</span>
+                </button>
+                <button class="nav-item" data-view="accounts" onclick="app.showView('accounts')">
+                    <span class="nav-icon">💳</span>
+                    <span class="nav-label" data-i18n="nav_accounts">บัญชี</span>
+                </button>
             </div>
-        </div>
+            <div class="header-actions">
+                <button class="btn-icon" id="settingsToggle" aria-label="ตั้งค่า" title="ตั้งค่า">⚙️</button>
+                <button class="btn-icon" id="themeToggle" aria-label="สลับธีม" title="สลับธีม">🌓</button>
+            </div>
+        </nav>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
         <!-- Dashboard View (Main Page) -->
         <section id="dashboard" class="view active">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2 data-i18n="quick_menu">เมนูหลัก</h2>
+                <div class="action-grid">
+                    <button class="action-card" onclick="app.showAddIncomeModal()">
+                        <span class="action-icon">💰</span>
+                        <span class="action-label" data-i18n="add_income">เพิ่มรายรับ</span>
+                    </button>
+                    <button class="action-card" onclick="app.showAddExpenseModal()">
+                        <span class="action-icon">💸</span>
+                        <span class="action-label" data-i18n="add_expense">เพิ่มรายจ่าย</span>
+                    </button>
+                    <button class="action-card" onclick="app.showLendingModal()">
+                        <span class="action-icon">🤝</span>
+                        <span class="action-label" data-i18n="lending">ยืม/ให้ยืม</span>
+                    </button>
+                    <button class="action-card" onclick="app.showCategoryManagementModal()">
+                        <span class="action-icon">📋</span>
+                        <span class="action-label">จัดการหมวดหมู่</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="daily-expense-section">
+                <div class="section-header">
+                    <h2 data-i18n="daily_expense">ค่าใช้จ่ายรายวัน</h2>
+                    <button class="btn-secondary" onclick="app.showDailyExpenseModal()" style="width: auto; padding: 0.5rem 1rem;">
+                        <span>⚙️</span> <span data-i18n="set_daily_limit">ตั้งงบ</span>
+                    </button>
+                </div>
+                <div id="dailyExpenseDisplay"></div>
+            </div>
+
             <div class="balance-card">
-                <h2 data-i18n="total_balance">ยอดรวมทั้งหมด</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h2 data-i18n="total_balance" style="margin: 0;">ยอดรวมทั้งหมด</h2>
+                    <button onclick="app.toggleHideBalance()" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; padding: 0.25rem; display: flex; align-items: center; justify-content: center;" aria-label="ซ่อน/แสดงยอดเงิน" title="ซ่อน/แสดงยอดเงิน">👁️</button>
+                </div>
                 <p class="balance-amount" id="totalBalance">฿0.00</p>
                 <div class="accounts-summary" id="accountsSummary"></div>
             </div>
@@ -32,77 +85,126 @@
             <div class="quick-stats">
                 <div class="stat-card">
                     <h3 data-i18n="monthly_income">รายรับเดือนนี้</h3>
-                    <p class="stat-amount income" id="monthlyIncome">฿0.00</p>
+                    <p class="stat-amount income" id="monthlyIncome" onclick="app.toggleHideBalance()" style="cursor: pointer;">฿0.00</p>
                 </div>
                 <div class="stat-card">
                     <h3 data-i18n="monthly_expense">รายจ่ายเดือนนี้</h3>
-                    <p class="stat-amount expense" id="monthlyExpense">฿0.00</p>
+                    <p class="stat-amount expense" id="monthlyExpense" onclick="app.toggleHideBalance()" style="cursor: pointer;">฿0.00</p>
                 </div>
             </div>
 
-            <div class="goals-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="savings-goal-section">
+                <div class="section-header">
                     <h2 data-i18n="savings_goals">เป้าหมายการออม</h2>
-                    <button class="btn-secondary" onclick="app.showGoalsModal()" style="width: auto; padding: 0.5rem 1rem;" data-i18n="view_all">ดูทั้งหมด</button>
+                    <button class="btn-secondary" onclick="app.showSavingsGoalModal()" style="width: auto; padding: 0.5rem 1rem;">
+                        <span>⚙️</span> <span data-i18n="set_goal">ตั้งเป้าหมาย</span>
+                    </button>
                 </div>
-                <div id="goalsList"></div>
+                <div id="savingsGoalDisplay"></div>
             </div>
 
             <div class="recent-transactions">
                 <h2 data-i18n="recent_transactions">รายการล่าสุด</h2>
                 <div id="recentTransactions"></div>
             </div>
+        </section>
 
-            <div class="chart-section">
-                <h2 data-i18n="expense_by_category">กราฟรายจ่ายตามหมวด</h2>
-                <canvas id="expenseChart"></canvas>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <h2 data-i18n="quick_menu">เมนูด่วน</h2>
-                <div class="action-grid">
-                    <button class="action-card" onclick="app.showAddTransactionModal()">
-                        <span class="action-icon">➕</span>
-                        <span class="action-label" data-i18n="add_transaction">เพิ่มรายการ</span>
+        <!-- Transactions View -->
+        <section id="transactions" class="view">
+            <div class="section-header">
+                <h2 data-i18n="nav_transactions">รายการ</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-primary" onclick="app.showAddIncomeModal()" style="width: auto; padding: 0.5rem 1rem;">
+                        <span>💰</span> <span data-i18n="add_income">เพิ่มรายรับ</span>
                     </button>
-                    <button class="action-card" onclick="app.showAccountsModal()">
-                        <span class="action-icon">💳</span>
-                        <span class="action-label" data-i18n="accounts">บัญชี</span>
-                    </button>
-                    <button class="action-card" onclick="app.showStatisticsModal()">
-                        <span class="action-icon">📈</span>
-                        <span class="action-label" data-i18n="statistics">สถิติ</span>
-                    </button>
-                    <button class="action-card" onclick="app.showBudgetModal()">
-                        <span class="action-icon">📊</span>
-                        <span class="action-label" data-i18n="budget">งบประมาณ</span>
-                    </button>
-                    <button class="action-card" onclick="app.showGoalsModal()">
-                        <span class="action-icon">🎯</span>
-                        <span class="action-label" data-i18n="goals">เป้าหมาย</span>
-                    </button>
-                    <button class="action-card" onclick="app.showChallengesModal()">
-                        <span class="action-icon">🎮</span>
-                        <span class="action-label" data-i18n="challenges">ชาเลนจ์</span>
-                    </button>
-                    <button class="action-card" onclick="app.showLendingModal()">
-                        <span class="action-icon">🤝</span>
-                        <span class="action-label" data-i18n="lending">ยืม/ให้ยืม</span>
-                    </button>
-                    <button class="action-card" onclick="app.showSettingsModal()">
-                        <span class="action-icon">⚙️</span>
-                        <span class="action-label" data-i18n="settings">ตั้งค่า</span>
+                    <button class="btn-primary btn-expense" onclick="app.showAddExpenseModal()" style="width: auto; padding: 0.5rem 1rem;">
+                        <span>💸</span> <span data-i18n="add_expense">เพิ่มรายจ่าย</span>
                     </button>
                 </div>
             </div>
+            <div id="transactionsList"></div>
+        </section>
+
+        <!-- Statistics View -->
+        <section id="statistics" class="view">
+            <div class="chart-section">
+                <div class="section-header">
+                    <h2 data-i18n="expense_by_category">กราฟรายจ่ายตามหมวด</h2>
+                    <div class="form-group" style="margin: 0; max-width: 250px;">
+                        <select id="accountFilter" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color);">
+                            <option value="all">ทั้งหมด</option>
+                        </select>
+                    </div>
+                </div>
+                <canvas id="expenseChart"></canvas>
+            </div>
+            <div class="chart-section" style="margin-top: 2rem;">
+                <div class="stats-tabs">
+                    <button class="tab-btn active" data-tab="weekly" data-i18n="weekly">รายสัปดาห์</button>
+                    <button class="tab-btn" data-tab="monthly" data-i18n="monthly">รายเดือน</button>
+                </div>
+                <div class="tab-content active" id="weeklyTab">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 0.5rem;">
+                        <button class="btn-secondary" onclick="app.navigateWeek(-1)" style="width: auto; padding: 0.5rem 1rem;">
+                            <span>←</span> <span data-i18n="previous">ก่อนหน้า</span>
+                        </button>
+                        <span id="weeklyChartLabel" style="font-weight: 500; flex: 1; text-align: center;"></span>
+                        <button class="btn-secondary" onclick="app.resetWeek()" style="width: auto; padding: 0.5rem 1rem; font-size: 0.85rem;" title="กลับมาสัปดาห์นี้">
+                            <span data-i18n="this_week">สัปดาห์นี้</span>
+                        </button>
+                        <button class="btn-secondary" onclick="app.navigateWeek(1)" style="width: auto; padding: 0.5rem 1rem;">
+                            <span data-i18n="next">ถัดไป</span> <span>→</span>
+                        </button>
+                    </div>
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+                <div class="tab-content" id="monthlyTab">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 0.5rem;">
+                        <button class="btn-secondary" onclick="app.navigateMonth(-1)" style="width: auto; padding: 0.5rem 1rem;">
+                            <span>←</span> <span data-i18n="previous">ก่อนหน้า</span>
+                        </button>
+                        <span id="monthlyChartLabel" style="font-weight: 500; flex: 1; text-align: center;"></span>
+                        <button class="btn-secondary" onclick="app.resetMonth()" style="width: auto; padding: 0.5rem 1rem; font-size: 0.85rem;" title="กลับมาหกเดือนล่าสุด">
+                            <span data-i18n="recent_months">6 เดือนล่าสุด</span>
+                        </button>
+                        <button class="btn-secondary" onclick="app.navigateMonth(1)" style="width: auto; padding: 0.5rem 1rem;">
+                            <span data-i18n="next">ถัดไป</span> <span>→</span>
+                        </button>
+                    </div>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accounts View -->
+        <section id="accounts" class="view">
+            <div class="section-header">
+                <h2 data-i18n="nav_accounts">บัญชี</h2>
+                <button class="btn-primary" onclick="app.showAddAccountModal()" style="width: auto; padding: 0.5rem 1rem;">
+                    <span>➕</span> <span data-i18n="add_account">เพิ่มบัญชี</span>
+                </button>
+            </div>
+            <div id="accountsList"></div>
+            <div id="transferSection" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                <h3 data-i18n="transfer_money">โอนเงินระหว่างบัญชี</h3>
+                <form id="transferForm">
+                    <div class="form-group">
+                        <label for="fromAccount" data-i18n="from_account">จากบัญชี</label>
+                        <select id="fromAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="toAccount" data-i18n="to_account">ไปยังบัญชี</label>
+                        <select id="toAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transferAmount" data-i18n="amount">จำนวนเงิน (฿)</label>
+                        <input type="number" id="transferAmount" step="0.01" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-primary" data-i18n="transfer">โอนเงิน</button>
+                </form>
+            </div>
         </section>
     </main>
-
-    <!-- Floating Action Button -->
-    <button class="fab" id="fabBtn" onclick="app.showAddTransactionModal()" aria-label="เพิ่มรายการ">
-        <span class="fab-icon">➕</span>
-    </button>
 
     <!-- Modals -->
     <div id="modalOverlay" class="modal-overlay">
