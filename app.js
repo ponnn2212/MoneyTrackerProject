@@ -211,8 +211,16 @@ const translations = {
 // Data Management
 class MoneyTracker {
     constructor() {
-        this.data = this.loadData();
-        this.currentLang = this.data.settings.language || 'th';
+        // Initialize Supabase client
+        this.supabase = null;
+        this.currentUser = null;
+        this.initSupabase();
+        
+        // Check authentication status
+        this.checkAuth();
+        
+        this.data = null; // Will be loaded after auth check
+        this.currentLang = 'th';
         this.defaultColors = [
             '#4a90e2', // Blue
             '#50c878', // Green
@@ -230,7 +238,351 @@ class MoneyTracker {
         this.chartTooltip = null; // Tooltip element
         this.weekOffset = 0; // Week offset for navigation (0 = current week)
         this.monthOffset = 0; // Month offset for navigation (0 = current month)
-        this.init();
+    }
+
+    initSupabase() {
+        try {
+            if (typeof supabase === 'undefined') {
+                throw new Error('Supabase client library is not loaded. Please check your internet connection.');
+            }
+            
+            if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+                throw new Error('Supabase configuration is missing. Please check config.js or environment variables.');
+            }
+            
+            this.supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+            console.log('✅ Supabase client initialized');
+        } catch (error) {
+            console.error('❌ Error initializing Supabase:', error);
+            this.showSupabaseError(error.message);
+            throw error;
+        }
+    }
+
+    showSupabaseError(message) {
+        const authScreen = document.getElementById('authScreen');
+        if (authScreen) {
+            authScreen.innerHTML = `
+                <div class="auth-container">
+                    <div class="auth-header">
+                        <h1>⚠️ เกิดข้อผิดพลาด</h1>
+                        <p style="color: var(--danger-color);">${message}</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                            กรุณาตรวจสอบการตั้งค่า Supabase หรือรีเฟรชหน้าเว็บ
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    async checkAuth() {
+        if (!this.supabase) {
+            throw new Error('Supabase is not initialized. Cannot proceed without database connection.');
+        }
+
+        try {
+            const { data: { session }, error } = await this.supabase.auth.getSession();
+            
+            if (error) {
+                console.error('Error getting session:', error);
+                this.showError('loginError', 'เกิดข้อผิดพลาดในการตรวจสอบสถานะการเข้าสู่ระบบ');
+                this.showAuth();
+                this.setupAuthListeners();
+                return;
+            }
+            
+            if (session && session.user) {
+                this.currentUser = session.user;
+                await this.loadDataFromSupabase();
+                this.showApp();
+                this.init();
+            } else {
+                this.showAuth();
+                this.setupAuthListeners();
+            }
+        } catch (error) {
+            console.error('Error checking auth:', error);
+            this.showSupabaseError('ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้: ' + error.message);
+        }
+    }
+
+    showAuth() {
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('appContent').style.display = 'none';
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.style.display = 'none';
+    }
+
+    showApp() {
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.style.display = 'block';
+    }
+
+    setupAuthListeners() {
+        // Switch between login and register forms
+        document.getElementById('showRegister')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('loginForm').classList.remove('active');
+            document.getElementById('registerForm').classList.add('active');
+            this.hideErrors();
+        });
+
+        document.getElementById('showLogin')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('registerForm').classList.remove('active');
+            document.getElementById('loginForm').classList.add('active');
+            this.hideErrors();
+        });
+
+        // Login form submission
+        document.getElementById('loginFormElement')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            await this.login(email, password);
+        });
+
+        // Register form submission
+        document.getElementById('registerFormElement')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            
+            if (password !== passwordConfirm) {
+                this.showError('registerError', 'รหัสผ่านไม่ตรงกัน');
+                return;
+            }
+            
+            await this.register(email, password);
+        });
+
+        // Logout button
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            this.logout();
+        });
+    }
+
+    hideErrors() {
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('registerError').style.display = 'none';
+    }
+
+    showError(elementId, message) {
+        const errorEl = document.getElementById(elementId);
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+    }
+
+    async login(email, password) {
+        if (!this.supabase) {
+            this.showError('loginError', 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้ กรุณาตรวจสอบการตั้งค่า');
+            return;
+        }
+
+        try {
+            const { data, error } = await this.supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                this.showError('loginError', error.message || 'เข้าสู่ระบบไม่สำเร็จ');
+                return;
+            }
+
+            if (data.user) {
+                this.currentUser = data.user;
+                await this.loadDataFromSupabase();
+                this.showApp();
+                this.init();
+                this.showNotification('เข้าสู่ระบบสำเร็จ!');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showError('loginError', 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ: ' + error.message);
+        }
+    }
+
+    async register(email, password) {
+        if (!this.supabase) {
+            this.showError('registerError', 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้ กรุณาตรวจสอบการตั้งค่า');
+            return;
+        }
+
+        try {
+            const { data, error } = await this.supabase.auth.signUp({
+                email,
+                password
+            });
+
+            if (error) {
+                this.showError('registerError', error.message || 'สมัครสมาชิกไม่สำเร็จ');
+                return;
+            }
+
+            if (data.user) {
+                // Create initial user data in database
+                await this.createUserData(data.user.id);
+                this.currentUser = data.user;
+                await this.loadDataFromSupabase();
+                this.showApp();
+                this.init();
+                this.showNotification('สมัครสมาชิกสำเร็จ!');
+            }
+        } catch (error) {
+            console.error('Register error:', error);
+            this.showError('registerError', 'เกิดข้อผิดพลาดในการสมัครสมาชิก: ' + error.message);
+        }
+    }
+
+    async logout() {
+        if (!this.supabase) {
+            console.error('Cannot logout: Supabase not initialized');
+            return;
+        }
+
+        try {
+            await this.supabase.auth.signOut();
+            this.currentUser = null;
+            this.data = null;
+            this.showAuth();
+            this.hideErrors();
+            // Clear form inputs
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('registerPasswordConfirm').value = '';
+        } catch (error) {
+            console.error('Logout error:', error);
+            this.showError('loginError', 'เกิดข้อผิดพลาดในการออกจากระบบ');
+        }
+    }
+
+    async createUserData(userId) {
+        if (!this.supabase) return;
+
+        const defaultData = {
+            accounts: [],
+            transactions: [],
+            categories: {
+                income: ['เงินเดือน', 'รายได้พิเศษ', 'เงินออม', 'อื่นๆ'],
+                expense: ['อาหาร', 'เดินทาง', 'หนังสือ', 'บันเทิง', 'เสื้อผ้า', 'อื่นๆ']
+            },
+            budgets: [],
+            goals: [],
+            challenges: [],
+            lending: [],
+            settings: {
+                theme: 'light',
+                hideBalance: false,
+                budgetAlert: true,
+                goalAlert: true,
+                autoSplit: { spending: 60, savings: 30, extra: 10 },
+                language: 'th',
+                dailyExpenseLimit: null
+            }
+        };
+
+        try {
+            const { error } = await this.supabase
+                .from('user_data')
+                .insert({
+                    user_id: userId,
+                    data: defaultData
+                });
+
+            if (error) {
+                console.error('Error creating user data:', error);
+            }
+        } catch (error) {
+            console.error('Error creating user data:', error);
+        }
+    }
+
+    async loadDataFromSupabase() {
+        if (!this.supabase || !this.currentUser) {
+            throw new Error('Cannot load data: Supabase or user not initialized');
+        }
+
+        try {
+            const { data: userData, error } = await this.supabase
+                .from('user_data')
+                .select('data')
+                .eq('user_id', this.currentUser.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                console.error('Error loading data from Supabase:', error);
+                throw new Error('ไม่สามารถโหลดข้อมูลจากฐานข้อมูลได้: ' + error.message);
+            } else if (userData && userData.data) {
+                this.data = userData.data;
+                // Migrate old lending records
+                if (this.data.lending && Array.isArray(this.data.lending)) {
+                    this.data.lending.forEach(lend => {
+                        if (lend.isReturned === undefined) {
+                            lend.isReturned = false;
+                        }
+                    });
+                }
+            } else {
+                // No data found, create default empty data
+                await this.createUserData(this.currentUser.id);
+                // Reload after creating
+                const { data: newUserData, error: reloadError } = await this.supabase
+                    .from('user_data')
+                    .select('data')
+                    .eq('user_id', this.currentUser.id)
+                    .single();
+                
+                if (reloadError || !newUserData) {
+                    throw new Error('ไม่สามารถสร้างข้อมูลผู้ใช้ได้');
+                }
+                this.data = newUserData.data;
+            }
+
+            this.currentLang = this.data.settings.language || 'th';
+        } catch (error) {
+            console.error('Error loading data from Supabase:', error);
+            throw error;
+        }
+    }
+
+    async saveDataToSupabase() {
+        if (!this.supabase || !this.currentUser) {
+            throw new Error('Cannot save data: Supabase or user not initialized');
+        }
+
+        if (!this.data) {
+            console.warn('No data to save');
+            return;
+        }
+
+        try {
+            const { error } = await this.supabase
+                .from('user_data')
+                .upsert({
+                    user_id: this.currentUser.id,
+                    data: this.data,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id'
+                });
+
+            if (error) {
+                console.error('Error saving data to Supabase:', error);
+                throw new Error('ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
+            }
+        } catch (error) {
+            console.error('Error saving data to Supabase:', error);
+            throw error;
+        }
     }
 
     loadData() {
@@ -270,8 +622,15 @@ class MoneyTracker {
         };
     }
 
-    saveData() {
-        localStorage.setItem('moneyTrackerData', JSON.stringify(this.data));
+    async saveData() {
+        // Save to Supabase only (no localStorage fallback)
+        try {
+            await this.saveDataToSupabase();
+        } catch (error) {
+            console.error('Failed to save data:', error);
+            this.showNotification('ไม่สามารถบันทึกข้อมูลได้: ' + error.message, 'error');
+            throw error;
+        }
     }
 
     init() {
@@ -301,10 +660,10 @@ class MoneyTracker {
         this.updateMonthlyChart();
     }
 
-    toggleLanguage() {
+    async toggleLanguage() {
         this.currentLang = this.currentLang === 'th' ? 'en' : 'th';
         this.data.settings.language = this.currentLang;
-        this.saveData();
+        await this.saveData().catch(err => console.error('Failed to save language:', err));
         document.documentElement.lang = this.currentLang;
         this.updateTranslations();
         this.updateUI();
@@ -326,6 +685,11 @@ class MoneyTracker {
         // Theme toggle
         document.getElementById('themeToggle')?.addEventListener('click', () => {
             this.toggleTheme();
+        });
+
+        // Logout button
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            this.logout();
         });
 
 

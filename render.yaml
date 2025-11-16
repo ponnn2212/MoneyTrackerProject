@@ -1,0 +1,15 @@
+# Render Blueprint Configuration
+# สำหรับการ Deploy บน Render Platform
+
+services:
+  - type: web
+    name: money-tracker
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+
